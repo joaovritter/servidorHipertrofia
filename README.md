@@ -34,6 +34,8 @@ O repositório está dividido em duas partes principais:
 
 <img width="1841" height="943" alt="image" src="https://github.com/user-attachments/assets/2ee11917-09e8-4960-8357-da6530c1cfd7" />
 
+---
+
 <img width="1916" height="948" alt="image" src="https://github.com/user-attachments/assets/0b84580f-9cde-4a26-a556-b696c8a220c2" />
 
 ---
