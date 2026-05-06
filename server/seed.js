@@ -214,7 +214,7 @@ async function runSeed() {
 
     for (const s of sets) {
       await pool.query(
-        `INSERT INTO sets (session_id, exercise_id, type, weight, reps, rir, completed) VALUES ($1, $2, $3, $4, $5, $6, true)`,
+        `INSERT INTO set_logs (session_id, exercise_id, type, weight, reps, rir, completed) VALUES ($1, $2, $3, $4, $5, $6, true)`,
         [pastSessionId, s.ex, s.type, s.weight, s.reps, s.rir]
       );
     }

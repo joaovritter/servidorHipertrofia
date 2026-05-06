@@ -26,7 +26,7 @@ router.get('/session/:id', authenticateToken, async (req, res) => {
     }
     // 2. Busca todos os exercícios e séries feitos nessa sessão
     const setsRes = await pool.query(
-      `SELECT sl.*, e.name as exercise_name 
+      `SELECT sl.*, e.name as exercise_name, e.muscle_group_id as muscle_group, e.equipment 
        FROM set_logs sl
        JOIN exercises e ON sl.exercise_id = e.id
        WHERE sl.session_id = $1
@@ -38,6 +38,8 @@ router.get('/session/:id', authenticateToken, async (req, res) => {
       if (!acc[set.exercise_id]) {
         acc[set.exercise_id] = {
           name: set.exercise_name,
+          muscle_group: set.muscle_group,
+          equipment: set.equipment,
           sets: []
         };
       }
@@ -97,13 +99,32 @@ router.post('/session/:id/finish', authenticateToken, async (req, res) => {
 
     let aiResultText = response.text;
 
-    let aiFeedback;
-    try {
-      aiFeedback = JSON.parse(aiResultText);
-    } catch (e) {
-      console.error("Erro ao parsear JSON do Gemini. Texto recebido:", aiResultText);
-      aiFeedback = { error: "Erro ao estruturar resposta da IA.", raw: aiResultText };
+    const aiFeedback = JSON.parse(aiResultText);
+
+    // --- NOVO: PERSISTÊNCIA NO BANCO DE DADOS ---
+
+    // 1. Criar uma NOVA sessão concluída no histórico
+    const sessionResult = await pool.query(
+      `INSERT INTO sessions (user_id, session_name, date, completed, ai_feedback)
+       VALUES ($1, $2, $3, true, $4)
+       RETURNING id`,
+      [req.user.id, sessionName, date || new Date(), aiFeedback]
+    );
+
+    const newSessionId = sessionResult.rows[0].id;
+
+    // 2. Salvar cada série (set) no log de treinos usando o NOVO ID da sessão
+    for (const set of sets) {
+      await pool.query(
+        `INSERT INTO set_logs (session_id, exercise_id, weight, reps, rir, type)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [newSessionId, set.exercise_id, set.weight, set.reps, set.rir, set.type || 'work']
+      );
     }
+
+    console.log(`✅ Treino salvo com sucesso! Nova Sessão ID: ${newSessionId}`);
+    console.log('🤖 Feedback da IA gerado com sucesso:');
+    console.log(JSON.stringify(aiFeedback, null, 2));
 
     res.json({ success: true, aiFeedback });
   } catch (error) {
@@ -124,15 +145,20 @@ router.get('/calendar', authenticateToken, async (req, res) => {
     const targetMonth = month || new Date().getMonth() + 1;
     const targetYear = year || new Date().getFullYear();
 
+    console.log(`📅 Buscando histórico para o Usuário: ${req.user.id}`);
+    console.log(`📅 Período: ${targetMonth}/${targetYear}`);
+
     const result = await pool.query(
       `SELECT id, session_name, date, completed 
        FROM sessions 
        WHERE user_id = $1 
        AND EXTRACT(MONTH FROM date) = $2 
        AND EXTRACT(YEAR FROM date) = $3
-       ORDER BY date ASC`,
+       ORDER BY date DESC`,
       [req.user.id, targetMonth, targetYear]
     );
+
+    console.log(`✅ Treinos encontrados: ${result.rows.length}`);
 
     res.json(result.rows);
   } catch (error) {

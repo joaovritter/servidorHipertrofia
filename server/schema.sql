@@ -76,7 +76,7 @@ CREATE TABLE sessions (
 );
 
 -- 6. Tabela de Séries Realizadas (Histórico de Cargas)
-CREATE TABLE sets (
+CREATE TABLE set_logs (
   id SERIAL PRIMARY KEY,
   session_id INT REFERENCES sessions(id) ON DELETE CASCADE,
   exercise_id VARCHAR(50) REFERENCES exercises(id),
