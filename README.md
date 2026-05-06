@@ -99,4 +99,4 @@ O frontend estará disponível por padrão em `http://localhost:5173`.
 ---
 
 ## 📝 Licença
-Este projeto é para fins acadêmicos e de estudo (ATIVIDADES FACUL).
+Este projeto é para fins acadêmicos e de estudo.
