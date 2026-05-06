@@ -43,7 +43,27 @@ async function runSeed() {
     const userId = userRes.rows[0].id;
     console.log(`✅ Usuário criado (ID: ${userId}) - Email: alex@hypertrack.app / Senha: mypassword`);
 
-    // 3. Inserir Banco de Exercícios
+    // 3. Inserir Grupos Musculares
+    console.log('🍖 Inserindo grupos musculares...');
+    const muscleGroups = [
+      ['chest', 'Peito', 'Músculos peitorais maiores e menores.'],
+      ['back', 'Costas', 'Dorsais, romboides e trapézio.'],
+      ['shoulders', 'Ombros', 'Deltoides anterior, lateral e posterior.'],
+      ['biceps', 'Bíceps', 'Bíceps braquial e braquial.'],
+      ['triceps', 'Tríceps', 'Tríceps braquial (três cabeças).'],
+      ['legs', 'Pernas', 'Quadríceps, posteriores, glúteos e panturrilhas.'],
+      ['abs', 'Abdômen', 'Reto abdominal e oblíquos.'],
+    ];
+
+    for (const mg of muscleGroups) {
+      await pool.query(
+        `INSERT INTO muscle_groups (id, name, description) VALUES ($1, $2, $3)`,
+        mg
+      );
+    }
+    console.log('✅ Grupos musculares inseridos!');
+
+    // 4. Inserir Banco de Exercícios
     console.log('🏋️ Inserindo exercícios...');
     const exercises = [
       ['ex_bp', 'Supino Reto com Barra', 'chest', 'Barra', 'compound', 'Contraia as escápulas e mantenha os pés firmes no chão.'],
@@ -65,7 +85,7 @@ async function runSeed() {
 
     for (const ex of exercises) {
       await pool.query(
-        `INSERT INTO exercises (id, name, muscle_group, equipment, type, tip) VALUES ($1, $2, $3, $4, $5, $6)`,
+        `INSERT INTO exercises (id, name, muscle_group_id, equipment, type, tip) VALUES ($1, $2, $3, $4, $5, $6)`,
         ex
       );
     }

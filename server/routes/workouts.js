@@ -66,4 +66,30 @@ router.post('/session/:id/finish', authenticateToken, async (req, res) => {
   }
 });
 
+// Obter histórico para o calendário (mês/ano)
+router.get('/calendar', authenticateToken, async (req, res) => {
+  try {
+    const { month, year } = req.query;
+    
+    // Se não passar mês/ano, pega o mês atual
+    const targetMonth = month || new Date().getMonth() + 1;
+    const targetYear = year || new Date().getFullYear();
+
+    const result = await pool.query(
+      `SELECT id, session_name, date, completed 
+       FROM sessions 
+       WHERE user_id = $1 
+       AND EXTRACT(MONTH FROM date) = $2 
+       AND EXTRACT(YEAR FROM date) = $3
+       ORDER BY date ASC`,
+      [req.user.id, targetMonth, targetYear]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao buscar dados do calendário' });
+  }
+});
+
 export default router;

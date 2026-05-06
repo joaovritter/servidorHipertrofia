@@ -21,11 +21,18 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Tabela Global de Exercícios (Banco de Exercícios)
+-- 2. Tabela de Grupos Musculares
+CREATE TABLE muscle_groups (
+  id VARCHAR(50) PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  description TEXT
+);
+
+-- 3. Tabela Global de Exercícios (Banco de Exercícios)
 CREATE TABLE exercises (
   id VARCHAR(50) PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
-  muscle_group VARCHAR(50) NOT NULL,
+  muscle_group_id VARCHAR(50) REFERENCES muscle_groups(id),
   equipment VARCHAR(50),
   type VARCHAR(20) NOT NULL, -- "compound", "isolation"
   tip TEXT
