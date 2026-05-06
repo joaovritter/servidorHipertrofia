@@ -12,6 +12,48 @@ import { authenticateToken } from '../middleware/auth.js';
 const router = express.Router();
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+//Retorna tudo que foi feito naquele treino específico
+router.get('/session/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    // 1. Busca os dados básicos da sessão e o feedback da IA
+    const sessionRes = await pool.query(
+      'SELECT * FROM sessions WHERE id = $1 AND user_id = $2',
+      [id, req.user.id]
+    );
+    if (sessionRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Sessão não encontrada' });
+    }
+    // 2. Busca todos os exercícios e séries feitos nessa sessão
+    const setsRes = await pool.query(
+      `SELECT sl.*, e.name as exercise_name 
+       FROM set_logs sl
+       JOIN exercises e ON sl.exercise_id = e.id
+       WHERE sl.session_id = $1
+       ORDER BY sl.id ASC`,
+      [id]
+    );
+    // Agrupa as séries por exercício para facilitar o front-end
+    const exercisesPerformed = setsRes.rows.reduce((acc, set) => {
+      if (!acc[set.exercise_id]) {
+        acc[set.exercise_id] = {
+          name: set.exercise_name,
+          sets: []
+        };
+      }
+      acc[set.exercise_id].sets.push(set);
+      return acc;
+    }, {});
+    res.json({
+      ...sessionRes.rows[0],
+      details: Object.values(exercisesPerformed)
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar detalhes da sessão' });
+  }
+});
+
+
 // Finaliza treino e avalia com Gemini
 router.post('/session/:id/finish', authenticateToken, async (req, res) => {
   try {
@@ -25,7 +67,7 @@ router.post('/session/:id/finish', authenticateToken, async (req, res) => {
     Séries:
     ${JSON.stringify(workSets, null, 2)}
     
-    Retorne uma avaliação no formato JSON com:
+    Retorne uma avaliação no formato JSON seguindo estas regras ESTRITAS:
     - sessionScore (0-100)
     - sessionLabel (ex: "Ótimo", "Volume excessivo", "RIR muito alto")
     - workSetsAnalyzed (int)
@@ -33,8 +75,15 @@ router.post('/session/:id/finish', authenticateToken, async (req, res) => {
     - avgRIR (float)
     - summary (string curta)
     - insights (array de objetos com { type: "positive"|"warning"|"info", title, body })
-    - nextSession (objeto com date="Próxima semana", recommendations: array com { exercise, target, rir, type: "increase"|"decrease"|"maintain", change })
+    - nextSession: objeto com date="Próxima semana" e recommendations: array de objetos { 
+        exercise: (NOME EXATO DO EXERCÍCIO), 
+        target: (STRING NO FORMATO EXATO "XX.Xkg x YY reps"), 
+        rir: (INT), 
+        type: "increase"|"decrease"|"maintain", 
+        change: (DESCRIÇÃO CURTA)
+      }
     
+    IMPORTANTE: No campo 'target', o peso deve ter uma casa decimal e terminar em 'kg' (ex: 52.5kg). As repetições devem vir após o 'x'.
     Retorne apenas JSON puro, sem markdown tags ou \`\`\`json.
     `;
 
@@ -70,7 +119,7 @@ router.post('/session/:id/finish', authenticateToken, async (req, res) => {
 router.get('/calendar', authenticateToken, async (req, res) => {
   try {
     const { month, year } = req.query;
-    
+
     // Se não passar mês/ano, pega o mês atual
     const targetMonth = month || new Date().getMonth() + 1;
     const targetYear = year || new Date().getFullYear();

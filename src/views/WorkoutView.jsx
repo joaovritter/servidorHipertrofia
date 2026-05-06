@@ -13,10 +13,23 @@ export default function WorkoutView({ setView, readOnly = false, sessionData = n
   const session = sessionData || TODAY_SESSION;
 
   const [exercises, setExercises] = useState(() =>
-    session.exercises.map(ex => ({
-      ...ex,
-      sets: ex.sets.map(s => ({ ...s })),
-    }))
+    session.exercises.map(ex => {
+      // Se não houver séries (vindo do banco), cria 4 por padrão
+      const defaultSets = (ex.sets && ex.sets.length > 0) 
+        ? ex.sets.map(s => ({ ...s }))
+        : Array.from({ length: 4 }).map((_, i) => ({
+            id: `s_${ex.id}_init_${i}`,
+            type: "work",
+            weight: 0,
+            reps: 0,
+            completed: false
+          }));
+
+      return {
+        ...ex,
+        sets: defaultSets,
+      };
+    })
   );
 
   const nextIdRef = useRef(100);

@@ -1,9 +1,12 @@
 -- Limpa as tabelas existentes para recriar (CUIDADO: apaga dados!)
-DROP TABLE IF EXISTS sets CASCADE;
+
+DROP TABLE IF EXISTS sets CASCADE;  
+DROP TABLE IF EXISTS set_logs CASCADE;
 DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS user_exercises CASCADE;
 DROP TABLE IF EXISTS user_divisions CASCADE;
 DROP TABLE IF EXISTS exercises CASCADE;
+DROP TABLE IF EXISTS muscle_groups CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 -- 1. Tabela de Usuários
