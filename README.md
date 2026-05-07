@@ -32,6 +32,31 @@ O repositório está dividido em duas partes principais:
 
 ---
 
+## 🧠 O Coração da API: Integração com Google Gemini
+
+O grande diferencial deste projeto é a utilização da inteligência artificial **Google Gemini** para transformar dados brutos de treino em consultoria esportiva personalizada.
+
+### Como funciona o fluxo da IA:
+1. **Coleta de Dados:** Ao finalizar um treino, o frontend envia para a API todos os "Work Sets" (séries efetivas), contendo o exercício, peso, repetições e o **RIR (Repetições em Reserva)**.
+2. **Prompt Engineering:** A API constrói um prompt altamente estruturado que instrui o Gemini a atuar como um "Treinador Especialista em Hipertrofia". 
+3. **Análise de Intensidade:** A IA cruza o volume total levantado com a proximidade da falha (RIR). Se o usuário está treinando com um RIR muito alto (ex: 4 ou 5), a IA entende que a intensidade está baixa e sugere aumento de carga.
+4. **Retorno Estruturado (JSON):** Forçamos a IA a responder em um formato JSON estrito, o que permite que o sistema processe automaticamente:
+    - **Session Score:** Uma nota de 0 a 100 para a qualidade do treino.
+    - **Insights Dinâmicos:** Avisos sobre volume excessivo ou progresso excelente.
+    - **Próxima Sessão:** Recomendações exatas de carga (ex: "Aumentar para 52.5kg") para garantir a **sobrecarga progressiva**.
+
+### Exemplo de Prompt interno:
+```text
+Aja como um treinador especialista em hipertrofia.
+Analise os seguintes "Work Sets"...
+Retorne uma avaliação no formato JSON seguindo estas regras ESTRITAS:
+- sessionScore, sessionLabel, nextSession { exercise, target, rir } ...
+```
+
+Este feedback é persistido no banco de dados e exibido no histórico do usuário, servindo como um guia para o próximo dia de treino.
+
+---
+
 <img width="1841" height="943" alt="image" src="https://github.com/user-attachments/assets/2ee11917-09e8-4960-8357-da6530c1cfd7" />
 
 ---
